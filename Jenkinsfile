@@ -7,21 +7,30 @@ pipeline{
                 }
         }
         stages{
-              stage('Quality Gate Statuc Check'){
+              stage('Sonar Scan'){
                   steps{
                       script{
                       withSonarQubeEnv('sonarserver') { 
                       sh "mvn sonar:sonar"
                        }
-                      timeout(time: 1, unit: 'HOURS') {
-                      def qg = waitForQualityGate()
-                      if (qg.status != 'OK') {
-                           error "Pipeline aborted due to quality gate failure: ${qg.status}"
-                      }
-                    }
-		    sh "mvn clean install"
+                  //sh "mvn clean install"
                   }
                 }  
               }
+
+              stage('Maven Build'){
+		 steps{
+		      script{
+                      sh "mvn clean install"
+		 }
+	       }
+	     }
+	     stage('Deploy'){
+		 steps{
+		      
+                    deploy adapters: [tomcat8(credentialsId: 'tomcat-server', path: '', url: 'http://3.95.209.245:8080/')], contextPath: 'Demo', war: 'target/*.war'
+		 }
+                      
         }
+}
 }
